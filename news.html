@@ -1,0 +1,29 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 资讯 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>AI 资讯</h1>
+<p class="lead">聚合公开 RSS / Atom：OpenAI、Anthropic / Claude、Google AI 等官方博客。经 /api/news 抓取并按关键词归类；未部署 Function 时显示来源说明，不编造新闻。</p>
+<div class="row" id="cats"></div>
+<div id="out"></div>
+<div class="row"><button class="secondary" id="prev">上一页</button><span class="small" id="pageInfo"></span><button class="secondary" id="next">下一页</button></div>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="news.html">AI资讯</a><a href="status.html">服务状态</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+const CATS=['全部','OpenAI','Claude','ChatGPT','Codex','API','Claude Code','Gemini','MCP'];
+let ALL=[],CAT='全部',PAGE=1;const PER=10;
+function catOf(it){const t=(it.title+' '+it.summary).toLowerCase();if(t.includes('claude code'))return 'Claude Code';if(t.includes('codex'))return 'Codex';if(t.includes('chatgpt'))return 'ChatGPT';if(t.includes('gemini'))return 'Gemini';if(t.includes('mcp'))return 'MCP';if(t.includes('api'))return 'API';if(t.includes('claude')||t.includes('anthropic'))return 'Claude';if(t.includes('openai'))return 'OpenAI';return it.source||'OpenAI';}
+function render(){
+ const list=ALL.map(x=>({...x,cat:catOf(x)})).filter(x=>CAT==='全部'||x.cat===CAT);
+ const pages=Math.max(1,Math.ceil(list.length/PER));if(PAGE>pages)PAGE=pages;
+ const slice=list.slice((PAGE-1)*PER,PAGE*PER);
+ document.getElementById('pageInfo').textContent=`第 ${PAGE} / ${pages} 页 · 共 ${list.length} 条`;
+ document.getElementById('out').innerHTML=slice.length?slice.map(x=>`<div class="card"><h3><a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.title)}</a></h3><p class="small">${esc(x.date?new Date(x.date).toLocaleDateString():'')} · ${esc(x.cat)} · 来源：${esc(x.source)}</p><p>${esc((x.summary||'').slice(0,200))}</p></div>`).join(''):'<p class="small">暂无该分类内容。</p>';
+}
+document.getElementById('cats').innerHTML=CATS.map(c=>`<button class="pill" data-c="${c}">${c}</button>`).join('');
+document.getElementById('cats').addEventListener('click',e=>{if(e.target.dataset.c){CAT=e.target.dataset.c;PAGE=1;document.querySelectorAll('#cats .pill').forEach(b=>b.classList.remove('on'));e.target.classList.add('on');render();}});
+document.getElementById('prev').onclick=()=>{if(PAGE>1){PAGE--;render();}};document.getElementById('next').onclick=()=>{PAGE++;render();};
+(async()=>{try{const j=await fetchJSON('/api/news',{},20000);ALL=j.items||[];if(!ALL.length)document.getElementById('out').innerHTML='<p class="small">Function 未返回新闻：可能是 RSS 源变更或被拦截。请检查 functions/api/news.js 里的源列表，或直接访问各官方博客。</p>';}catch(e){document.getElementById('out').innerHTML='<p class="small">未部署 Function 时无新闻数据（本地静态预览正常）。部署后 /api/news 会抓取公开 RSS。</p>';}render();})();
+</script></body></html>

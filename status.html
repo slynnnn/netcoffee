@@ -1,0 +1,69 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>服务状态 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>全球主流服务状态</h1>
+<p class="lead">聚合各服务官方状态页数据，故障自动置顶。数据经 /api/status（Function，10 分钟缓存）抓取；未部署 Function 时，前端会尝试直连官方 statuspage 接口，失败则显示“未知”，不伪造正常。</p>
+<div class="row"><button id="go">刷新</button><select id="cat"><option value="全部">全部类别</option><option>AI</option><option>云服务</option><option>开发</option><option>社区</option></select><span class="small" id="updated"></span></div>
+<div id="out"></div>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="status.html">服务状态</a><a href="news.html">AI资讯</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+const SERVICES=[
+ {name:'Claude (Anthropic)',cat:'AI',url:'https://status.anthropic.com/api/v2/summary.json'},
+ {name:'OpenAI / ChatGPT',cat:'AI',url:'https://status.openai.com/api/v2/summary.json'},
+ {name:'Cursor',cat:'AI',url:'https://status.cursor.com/api/v2/summary.json'},
+ {name:'Grok / xAI',cat:'AI',url:'https://status.x.ai/api/v2/summary.json'},
+ {name:'Groq',cat:'AI',url:'https://status.groq.com/api/v2/summary.json'},
+ {name:'ElevenLabs',cat:'AI',url:'https://status.elevenlabs.io/api/v2/summary.json'},
+ {name:'Perplexity',cat:'AI',url:'https://status.perplexity.ai/api/v2/summary.json'},
+ {name:'Replicate',cat:'AI',url:'https://status.replicate.com/api/v2/summary.json'},
+ {name:'Cloudflare',cat:'云服务',url:'https://www.cloudflarestatus.com/api/v2/summary.json'},
+ {name:'Vercel',cat:'云服务',url:'https://www.vercel-status.com/api/v2/summary.json'},
+ {name:'Netlify',cat:'云服务',url:'https://www.netlifystatus.com/api/v2/summary.json'},
+ {name:'DigitalOcean',cat:'云服务',url:'https://status.digitalocean.com/api/v2/summary.json'},
+ {name:'Supabase',cat:'云服务',url:'https://status.supabase.com/api/v2/summary.json'},
+ {name:'Fly.io',cat:'云服务',url:'https://status.fly.io/api/v2/summary.json'},
+ {name:'GitHub',cat:'开发',url:'https://www.githubstatus.com/api/v2/summary.json'},
+ {name:'npm',cat:'开发',url:'https://status.npmjs.org/api/v2/summary.json'},
+ {name:'Stripe',cat:'开发',url:'https://status.stripe.com/api/v2/summary.json'},
+ {name:'Notion',cat:'开发',url:'https://status.notion.so/api/v2/summary.json'},
+ {name:'Figma',cat:'开发',url:'https://status.figma.com/api/v2/summary.json'},
+ {name:'Sentry',cat:'开发',url:'https://status.sentry.io/api/v2/summary.json'},
+ {name:'Postman',cat:'开发',url:'https://status.postman.com/api/v2/summary.json'},
+ {name:'Atlassian / Jira',cat:'开发',url:'https://status.atlassian.com/api/v2/summary.json'},
+ {name:'Twilio',cat:'开发',url:'https://status.twilio.com/api/v2/summary.json'},
+ {name:'Clerk',cat:'开发',url:'https://status.clerk.com/api/v2/summary.json'},
+ {name:'SendGrid',cat:'开发',url:'https://status.sendgrid.com/api/v2/summary.json'},
+ {name:'Python / PyPI',cat:'开发',url:'https://status.python.org/api/v2/summary.json'},
+ {name:'Discord',cat:'社区',url:'https://discordstatus.com/api/v2/summary.json'},
+ {name:'Reddit',cat:'社区',url:'https://www.redditstatus.com/api/v2/summary.json'},
+ {name:'Zoom',cat:'社区',url:'https://status.zoom.us/api/v2/summary.json'},
+ {name:'Twitch',cat:'社区',url:'https://status.twitch.tv/api/v2/summary.json'},
+ {name:'Pinterest',cat:'社区',url:'https://status.pinterest.com/api/v2/summary.json'},
+];
+function badge(s){if(s==='operational')return '<span class="badge ok">正常运行</span>';if(s==='unknown')return '<span class="badge grey">状态未知</span>';return '<span class="badge bad">故障</span>';}
+function render(list){
+ const cat=document.getElementById('cat').value;const f=list.filter(x=>cat==='全部'||x.category===cat);
+ const faults=f.filter(x=>x.status!=='operational'&&x.status!=='unknown');
+ const running=f.filter(x=>x.status==='operational');
+ const unknown=f.filter(x=>x.status==='unknown');
+ let h='';
+ if(faults.length)h+=`<h2>⚠ 当前故障 ${faults.length} 个服务</h2><div class="statgrid">`+faults.map(x=>`<div class="card p-pink"><h3>${esc(x.name)}</h3><p>${badge(x.status)} · ${esc(x.category)}</p><p class="small">${esc(x.incident||'官方状态页显示异常，点卡片查看原文')}</p><p><a href="${esc(x.page||'')}" target="_blank" rel="noopener">官方状态页 ↗</a></p></div>`).join('')+'</div>';
+ h+=`<h2>运行中 ${running.length} 个服务</h2><div class="statgrid">`+running.map(x=>`<div class="card p-green"><h3>${esc(x.name)}</h3><p>${badge(x.status)} · ${esc(x.category)}</p><p><a href="${esc(x.page||'')}" target="_blank" rel="noopener">官方状态页 ↗</a></p></div>`).join('')+'</div>';
+ if(unknown.length)h+=`<h2>状态未知 ${unknown.length} 个</h2><div class="statgrid">`+unknown.map(x=>`<div class="card"><h3>${esc(x.name)}</h3><p>${badge(x.status)} · ${esc(x.category)}</p><p class="small">官方接口未返回或被拦截，不猜测为正常。</p></div>`).join('')+'</div>';
+ document.getElementById('out').innerHTML=h||'<p class="small">暂无数据。</p>';
+}
+async function run(){
+ document.getElementById('out').innerHTML='<p class="small">加载中…</p>';
+ try{const j=await fetchJSON('/api/status',{},15000);document.getElementById('updated').textContent='更新于 '+new Date(j.updated||Date.now()).toLocaleString()+'（Function 缓存 10 分钟）';render(j.services);return;}catch(e){}
+ // fallback direct
+ const list=[];
+ for(const s of SERVICES){try{const j=await fetchJSON(s.url,{},6000);const inc=(j.incidents||[])[0];list.push({name:s.name,category:s.cat,status:j.status?.indicator||'unknown',incident:inc?inc.name:'',page:s.url.replace('/api/v2/summary.json','')});}catch(err){list.push({name:s.name,category:s.cat,status:'unknown',incident:'',page:s.url.replace('/api/v2/summary.json','')});}}
+ document.getElementById('updated').textContent='直连官方接口（无 Function 缓存）';
+ render(list);
+}
+document.getElementById('go').onclick=run;document.getElementById('cat').onchange=run;run();
+</script></body></html>

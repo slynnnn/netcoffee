@@ -1,0 +1,32 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>网络连通性测试 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>网络连通性测试</h1>
+<p class="lead">测试在你的浏览器本地直接向各站发轻量请求（favicon），测往返延迟。结果反映你当前这条线路到各站的真实情况，不是服务器代测。超时通常意味着该站被当前网络屏蔽或线路不通。</p>
+<div class="row"><button id="go">开始测试</button><span class="small">优 &lt;200ms · 良 &lt;500ms · 慢 &lt;1000ms · 超时 = 5 秒未回</span></div>
+<div id="out"></div>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="link.html">网络连通</a><a href="ping.html">全球Ping</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+const GROUPS={
+ '中国':['baidu.com','bilibili.com','zhihu.com','taobao.com','jd.com','weibo.com','qq.com','163.com','aliyun.com','weixin.qq.com'],
+ '日本':['yahoo.co.jp','line.me','pixiv.net','nicovideo.jp','rakuten.co.jp','dmm.com'],
+ '美国':['google.com','youtube.com','github.com','openai.com','chatgpt.com','claude.ai','discord.com','x.com','netflix.com','wikipedia.org'],
+ '全球':['telegram.org','bbc.com','spotify.com','amazon.com','apple.com','microsoft.com','reddit.com','instagram.com','facebook.com','tiktok.com'],
+};
+async function run(){
+ const out=document.getElementById('out');out.innerHTML='<p class="small">测试中，请稍候…</p>';
+ let html='';
+ for(const [g,domains] of Object.entries(GROUPS)){
+   let rows='',ok=0,vals=[];
+   for(const d of domains){const ms=await timedFetch('https://'+d+'/favicon.ico',5000);if(ms!==null){ok++;vals.push(ms);}rows+=`<tr><td>${esc(d)}</td><td>${latencyLabel(ms)}</td></tr>`;}
+   const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;
+   html+=`<div class="card"><h3>${g} — 可达 ${ok}/${domains.length} · 平均 ${avg===null?'—':avg+'ms'}</h3><table><tr><th>网站</th><th>延迟</th></tr>${rows}</table></div>`;
+   out.innerHTML=html;
+ }
+}
+document.getElementById('go').onclick=run;run();
+</script></body></html>

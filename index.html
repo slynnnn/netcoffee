@@ -1,0 +1,61 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IP 查询 · 分流出口测试 — IP 工具</title><meta name="description" content="查看当前 IP、归属地、运营商与分流出口，测各站延迟。免费，无登录，不记录查询。">
+<link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>我的 IP 查询</h1>
+<p class="lead">查看当前 IP 地址、地理位置、网络连通性和分流出口。分流出口的含义见下方说明：浏览器本身看不到每个网站背后的出口 IP，只能通过延迟/可达性差异推断路由。</p>
+<div class="note"><b>诚实说明：</b>所谓“每个网站的出口 IP”，只有在你自己的代理/服务器上做出口探测才能逐站拿到。本页在浏览器里做的是：显示你的当前出口 IP，并逐站测延迟与可达性；若某站走了不同线路，延迟和地区表现会明显不同。点下方表格里的 IP，会跳到 IP 评分页做进一步查询。</div>
+<div class="row"><label><input type="checkbox" id="hideIp"> 隐藏 IP（打码显示）</label><button id="refreshBtn">重新检测</button></div>
+<div class="grid">
+<div class="card p-blue"><h3>IPv4</h3><p id="v4" data-ip>检测中…</p><p class="small" id="v4info"></p></div>
+<div class="card p-pink"><h3>IPv6</h3><p id="v6" data-ip>检测中…</p><p class="small">无 IPv6 时显示“未检测到”，不代表网络异常。</p></div>
+<div class="card p-green"><h3>归属地 / 运营商</h3><p id="geo">检测中…</p></div>
+<div class="card p-yellow"><h3>类型</h3><p id="type">检测中…</p><p class="small" id="src"></p></div>
+</div>
+<h2>延迟预览（6 站）</h2>
+<div id="preview"><p class="small">检测中…</p></div>
+<p><a href="link.html">查看更多 › 完整网络连通测试</a></p>
+<h2>分流出口汇总</h2>
+<p class="small">按国内 / 国际分组，再按类别分组。点击 IP 列的地址可到 IP 评分页查询该 IP（当前页只能填入你自己的 IP 做示例；逐站出口 IP 需后端探测，见 README）。</p>
+<div class="row" id="catFilter"></div>
+<div id="egress"></div>
+<h2>本页能做什么、不能做什么</h2>
+<ul><li>能：查你当前出口 IP、归属、ISP、类型；测各站延迟，验证分流是否按预期生效。</li>
+<li>不能：直接读出每个网站的出口 IP、也不能替你改代理规则。需要逐站出口 IP 时，请用你自己的出口服务器做探测，或接入 README 里写的后端探测接口。</li></ul>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询；历史只存浏览器本地。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+const EGRESS=[
+ // domestic
+ {name:'百度',domain:'baidu.com',group:'国内',cat:'工具'},{name:'哔哩哔哩',domain:'bilibili.com',group:'国内',cat:'媒体'},{name:'知乎',domain:'zhihu.com',group:'国内',cat:'社交'},{name:'淘宝',domain:'taobao.com',group:'国内',cat:'工具'},{name:'京东',domain:'jd.com',group:'国内',cat:'工具'},{name:'微博',domain:'weibo.com',group:'国内',cat:'社交'},{name:'腾讯',domain:'qq.com',group:'国内',cat:'工具'},{name:'网易',domain:'163.com',group:'国内',cat:'媒体'},
+ // international
+ {name:'Google',domain:'google.com',group:'国际',cat:'工具'},{name:'YouTube',domain:'youtube.com',group:'国际',cat:'媒体'},{name:'GitHub',domain:'github.com',group:'国际',cat:'开发'},{name:'Cloudflare',domain:'cloudflare.com',group:'国际',cat:'工具'},{name:'OpenAI',domain:'openai.com',group:'国际',cat:'AI'},{name:'ChatGPT',domain:'chatgpt.com',group:'国际',cat:'AI'},{name:'Claude',domain:'claude.ai',group:'国际',cat:'AI'},{name:'Anthropic',domain:'anthropic.com',group:'国际',cat:'AI'},{name:'Discord',domain:'discord.com',group:'国际',cat:'社交'},{name:'X',domain:'x.com',group:'国际',cat:'社交'},{name:'Instagram',domain:'instagram.com',group:'国际',cat:'社交'},{name:'Telegram',domain:'telegram.org',group:'国际',cat:'社交'},{name:'Netflix',domain:'netflix.com',group:'国际',cat:'媒体'},{name:'Spotify',domain:'spotify.com',group:'国际',cat:'媒体'},{name:'Wikipedia',domain:'wikipedia.org',group:'国际',cat:'工具'},{name:'Reddit',domain:'reddit.com',group:'国际',cat:'社交'},{name:'Binance',domain:'binance.com',group:'国际',cat:'加密'},{name:'Coinbase',domain:'coinbase.com',group:'国际',cat:'加密'},{name:'CoinGecko',domain:'coingecko.com',group:'国际',cat:'加密'},{name:'npm',domain:'npmjs.com',group:'国际',cat:'开发'},{name:'PyPI',domain:'pypi.org',group:'国际',cat:'开发'},{name:'Docker Hub',domain:'hub.docker.com',group:'国际',cat:'开发'},{name:'Hugging Face',domain:'huggingface.co',group:'国际',cat:'AI'},{name:'Vercel',domain:'vercel.com',group:'国际',cat:'开发'},{name:'Speedtest',domain:'speedtest.net',group:'国际',cat:'测速'},{name:'Fast',domain:'fast.com',group:'国际',cat:'测速'},{name:'Cloudflare Speed',domain:'speed.cloudflare.com',group:'国际',cat:'测速'},{name:'jsDelivr',domain:'cdn.jsdelivr.net',group:'国际',cat:'静态'},{name:'unpkg',domain:'unpkg.com',group:'国际',cat:'静态'},
+];
+let CUR='';
+async function load(){
+  const both=await getBothIPs();CUR=both.v4||both.v6||'';
+  const set=(id,v)=>{const el=document.getElementById(id);el.textContent=v||'未检测到';el.dataset.raw=v||'';setHide(document.getElementById('hideIp').checked);};
+  set('v4',both.v4);set('v6',both.v6);
+  try{const info=await getIPInfo(CUR);document.getElementById('geo').textContent=[info.country,info.region,info.city].filter(Boolean).join(' ')||'—';document.getElementById('v4info').textContent=info.isp?('ISP：'+info.isp):'';document.getElementById('type').textContent=info.hosting?'机房 / 托管':info.mobile?'移动网络':info.proxy?'代理特征':'住宅 / 普通宽带（启发式）';document.getElementById('src').textContent='数据来源：'+info.source+'（免费接口，启发式判断，仅供参考）';saveHistory('index',{ip:CUR,label:info.country||''});}catch(e){document.getElementById('geo').textContent='查询失败，请重试';}
+  // preview 6
+  const prev=['google.com','github.com','claude.ai','chatgpt.com','baidu.com','bilibili.com'];
+  const pv=document.getElementById('preview');pv.innerHTML='';
+  for(const d of prev){const ms=await timedFetch('https://'+d+'/favicon.ico',5000);const div=document.createElement('div');div.className='small';div.innerHTML=esc(d)+' — '+latencyLabel(ms);pv.appendChild(div);}
+  renderEgress('全部');
+}
+function renderEgress(cat){
+  const list=EGRESS.filter(x=>cat==='全部'||x.cat===cat);
+  const groups=['国内','国际'];
+  let html='';
+  for(const g of groups){const rows=list.filter(x=>x.group===g);if(!rows.length)continue;html+=`<h3>${g}（${rows.length} 站）</h3><table><tr><th>网站</th><th>类别</th><th>当前出口 IP（示例）</th><th>延迟</th></tr>`+rows.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.cat)}</td><td><a href="ip.html?ip=${encodeURIComponent(CUR)}">${esc(CUR||'—')}</a></td><td data-site="${esc(x.domain)}">待测…</td></tr>`).join('')+'</table>';}
+  document.getElementById('egress').innerHTML=html;
+  document.querySelectorAll('[data-site]').forEach(async td=>{const ms=await timedFetch('https://'+td.dataset.site+'/favicon.ico',5000);td.innerHTML=latencyLabel(ms);});
+}
+document.getElementById('catFilter').innerHTML=['全部','社交','AI','加密','工具','测速','静态','开发','媒体'].map(c=>`<button class="pill" data-c="${c}">${c}</button>`).join('');
+document.getElementById('catFilter').addEventListener('click',e=>{if(e.target.dataset.c){document.querySelectorAll('#catFilter .pill').forEach(b=>b.classList.remove('on'));e.target.classList.add('on');renderEgress(e.target.dataset.c);}});
+document.getElementById('hideIp').addEventListener('change',e=>setHide(e.target.checked));
+document.getElementById('refreshBtn').onclick=load;load();
+</script></body></html>

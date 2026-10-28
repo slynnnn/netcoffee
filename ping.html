@@ -1,0 +1,36 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>全球 Ping 测试 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>全球 Ping 测试</h1>
+<p class="lead">输入 IP 或域名。先给浏览器近似结果（3 次实测的最小 / 平均 / 最大），再列出 20 个全球节点——这些节点目前没有真实 ICMP 探测数据，不伪造。</p>
+<div class="note"><b>为什么不直接给 20 节点数据？</b>浏览器不能从上海、香港、东京等节点发出 ICMP，也不能替那些节点测。真实多节点 Ping 需要：部署在各地的探测节点，或接入付费 Ping API（见 README 的 PING_API_URL 钩子）。接入后，Function 会把真实结果填到下表；未接入前，下表统一显示“未接入”。</div>
+<div class="row"><input id="target" placeholder="输入 IP 或域名，如 1.1.1.1 或 example.com"><button id="go">测试</button></div>
+<div id="browserOut"></div>
+<h2>全球节点（20 个）</h2>
+<div id="nodes"></div>
+<h2>边缘节点近似（Function）</h2>
+<p class="small">部署到 Pages / Vercel 后，/api/ping 会从边缘节点做一次 HTTP 延迟探测，这只是单节点近似，不是全球 ICMP。</p>
+<div id="edgeOut"></div>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="ping.html">全球Ping</a><a href="link.html">网络连通</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+const NODES={
+ '亚洲':['上海','香港','东京','新加坡','胡志明市','雅加达','孟买','特拉维夫'],
+ '美洲':['洛杉矶','亚特兰大','温哥华','圣保罗'],
+ '欧洲':['法兰克福','阿姆斯特丹','巴黎','斯德哥尔摩','苏黎世','马德里','莫斯科','伊斯坦布尔'],
+};
+function renderNodes(){let h='';for(const [g,list] of Object.entries(NODES)){h+=`<h3>${g}（${list.length} 节点）</h3><table><tr><th>节点</th><th>最小</th><th>平均</th><th>最大</th></tr>`+list.map(n=>`<tr><td>${n}</td><td colspan="3"><span class="badge grey">未接入真实节点</span></td></tr>`).join('')+'</table>';}document.getElementById('nodes').innerHTML=h;}
+async function run(){
+ const t=document.getElementById('target').value.trim();if(!t){document.getElementById('browserOut').innerHTML='<p class="small">请先输入 IP 或域名。</p>';return;}
+ document.getElementById('browserOut').innerHTML='<p class="small">浏览器实测 3 次中…</p>';
+ const vals=[];
+ for(let i=0;i<3;i++){const ms=await timedFetch('https://'+t+'/favicon.ico',5000);if(ms!==null)vals.push(ms);}
+ if(!vals.length){document.getElementById('browserOut').innerHTML='<div class="card"><p><span class="badge bad">超时 / 不可达</span> — 浏览器 3 次均未在 5 秒内回包。</p></div>';}
+ else{document.getElementById('browserOut').innerHTML=`<div class="card"><h3>浏览器近似（从你的设备出发，3 次）</h3><p>最小 ${Math.min(...vals)}ms · 平均 ${Math.round(vals.reduce((a,b)=>a+b,0)/vals.length)}ms · 最大 ${Math.max(...vals)}ms</p><p class="small">这是 HTTPS favicon 往返，不是 ICMP Ping；受浏览器、代理与目标站是否提供 favicon 影响。</p></div>`;}
+ try{const j=await fetchJSON('/api/ping?target='+encodeURIComponent(t),{},8000);document.getElementById('edgeOut').innerHTML=`<div class="card"><p>边缘近似：${j.edge_ms?j.edge_ms+'ms':'不可达'} · 来源：${esc(j.source||'Function')}</p></div>`;}catch(e){document.getElementById('edgeOut').innerHTML='<p class="small">未部署 Function 时无边缘数据（本地静态预览正常）。</p>';}
+}
+document.getElementById('go').onclick=run;renderNodes();
+</script></body></html>

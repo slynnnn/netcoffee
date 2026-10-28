@@ -1,0 +1,50 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cloudflare 节点检测 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>Cloudflare 节点检测</h1>
+<p class="lead">向 Cloudflare 的 cdn-cgi/trace 接口发请求，把返回的节点代码、出口 IP、WARP 状态、协议版本翻译成人能看懂的结论。命中哪个边缘节点，直接影响速度和地区识别。</p>
+<div class="row"><button id="go">重新检测</button><label><input type="checkbox" id="hideIp"> 隐藏 IP</label></div>
+<div id="out"></div>
+<h2>不同网络等级的节点与延迟对比</h2>
+<p class="small">同一条线路访问不同等级的 Cloudflare 站点，可能命中不同节点。免费版在部分地区会被调度到远端节点，企业版 / Cloudflare 自家服务更容易命中就近节点。</p>
+<div id="tiers"></div>
+<h2>边缘测速（需手动确认）</h2>
+<div class="note">⚠️ 流量警告：完整测速最多消耗约 350 MB 流量（速度越快用得越多，百兆线路通常 150–300 MB）。手机流量用户请勿点。测速只在你点击后开始，且可随时停止。</div>
+<div class="row"><button id="speedBtn">我已了解，开始测速</button><button class="secondary" id="stopBtn" disabled>停止</button></div>
+<div id="speedOut"></div>
+<h2>环境风险（启发式）</h2>
+<div id="risk"></div>
+<p class="small">Turnstile 说明：真正的人机验证需要你自己的 Cloudflare Turnstile 站点密钥（sitekey），本站不伪造“通过”结果。下方是占位说明：接入 sitekey 后，可在此做非交互 / 托管两种模式的实测并把 token 送服务端二次校验；未接入时只显示“未配置”。</p>
+<div class="card"><h3>Turnstile 检查</h3><p><span class="badge grey">未配置 sitekey</span> — 需要你自己的 Turnstile sitekey 才能实测，见 README。</p></div>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="cloudflare.html">Cloudflare</a><a href="ip.html">IP评分</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+async function run(){
+ const out=document.getElementById('out');
+ const tr=await fetchTrace();
+ const info=await getIPInfo().catch(()=>({}));
+ const sc=heuristicScore(info);
+ out.innerHTML=`
+ <div class="card p-cyan"><h3>Cloudflare 出口 IP：<span data-ip data-raw="${esc(tr.ip||info.ip||'')}">${esc(tr.ip||info.ip||'—')}</span></h3>
+ <div class="kv"><b>边缘节点 colo</b><span>${esc(tr.colo||'—')}（${esc(coloCity(tr.colo||''))}）</span><b>地区</b><span>${esc(tr.loc||'—')}</span><b>WARP</b><span>${esc(tr.warp||'—')}（on = 经 WARP，出口会变成 Cloudflare 自身 AS13335 的 IP）</span><b>HTTP 版本</b><span>${esc(tr.http||'—')}</span><b>TLS 版本</b><span>${esc(tr.tls||'—')}</span><b>协议 / 其他</b><span>${esc(tr.h||'') } ${esc(tr.sni||'')}</span></div></div>`;
+ document.getElementById('risk').innerHTML=`<div class="card"><p>启发式风险：${sc.score} / 100 ${scoreBadge(sc.score)}</p><p class="small">公开代理：${info.proxy?'疑似':'未见信号'} · 住宅代理：未接入商业源 · 企业代理：未见信号 · VPN：${info.proxy?'疑似':'未见信号'} · Tor：无法判定 · 机房 IP：${info.hosting?'是':'否'} · 滥用记录：未接入商业源时不做结论。仅开放高置信度信号，未检测到不代表绝对安全。</p></div>`;
+ setHide(document.getElementById('hideIp').checked);
+ const tiers=[['本站（免费版）','cloudflare.com'],['企业版示例','www.cloudflare.com'],['WARP / 1.1.1.1','one.one.one.one'],['测速网络','speed.cloudflare.com'],['静态 CDN','cdnjs.cloudflare.com'],['Workers','workers.dev']];
+ let rows='';
+ for(const [label,dom] of tiers){const ms=await timedFetch('https://'+dom+'/favicon.ico',5000);rows+=`<tr><td>${label}</td><td>${esc(dom)}</td><td>${latencyLabel(ms)}</td><td>浏览器实测，非节点代码</td></tr>`;}
+ document.getElementById('tiers').innerHTML=`<table><tr><th>网络</th><th>站点</th><th>延迟</th><th>说明</th></tr>${rows}</table><p class="small">节点代码以 trace 结果为准；上表延迟是浏览器到各站的实测，用于横向对比。</p>`;
+}
+let stopFlag=false;
+document.getElementById('speedBtn').onclick=async()=>{
+ stopFlag=false;document.getElementById('stopBtn').disabled=false;const o=document.getElementById('speedOut');o.innerHTML='<p class="small">测速中…下载最多约 50 MB 做演示版（完整版 300 MB 需在代码里改字节数，见 README），可点停止。</p>';
+ const t0=performance.now();let bytes=0;
+ try{const r=await fetch('https://speed.cloudflare.com/__down?bytes=50000000');const reader=r.body.getReader();while(true){if(stopFlag)break;const {done,value}=await reader.read();if(done)break;bytes+=value.length;o.innerHTML=`<p>已下载 ${(bytes/1048576).toFixed(1)} MB · 速度 ${((bytes*8/((performance.now()-t0)/1000))/1000000).toFixed(1)} Mbps</p>`;}}
+ catch(e){o.innerHTML+='<p class="small">测速被拦截或中断。</p>';}
+ document.getElementById('stopBtn').disabled=true;
+};
+document.getElementById('stopBtn').onclick=()=>{stopFlag=true;};
+document.getElementById('go').onclick=run;document.getElementById('hideIp').addEventListener('change',e=>setHide(e.target.checked));run();
+</script></body></html>

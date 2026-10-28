@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ChatGPT / Codex 出口 IP 检测 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>ChatGPT · Codex 出口 IP 检测</h1>
+<p class="lead">与 Claude 页同款逻辑，针对 ChatGPT / Codex。注意：chatgpt.com 网页链路与 api.openai.com 接口链路可能走不同出口，一个通不代表另一个通，Codex 用户要重点看 API 那一行。</p>
+<div class="row"><button id="go">重新检测</button><label><input type="checkbox" id="hideIp"> 隐藏 IP</label></div>
+<div id="out"><p class="small">检测中…</p></div>
+<h2>历史（仅本机）</h2><div id="hist"></div><button class="secondary" id="clearHist">清除历史</button>
+<p class="small">参考口径（本站启发式）：70 以上一般较稳，50–70 偶有验证，50 以下较易触发验证或限制；最终以 OpenAI 服务端判断为准。</p>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="gpt.html">GPT检测</a><a href="ip.html">IP评分</a><a href="webrtc.html">WebRTC</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+async function run(){
+ const el=document.getElementById('out');
+ try{
+  const info=await getIPInfo();const sc=heuristicScore(info);const tr=await fetchTrace();
+  const sites=[['chatgpt.com','https://chatgpt.com/favicon.ico'],['api.openai.com','https://api.openai.com/favicon.ico'],['openai.com','https://openai.com/favicon.ico']];
+  let rows='';
+  for(const [n,u] of sites){const ms=await timedFetch(u,5000);rows+=`<tr><td>${n}</td><td>${latencyLabel(ms)}</td></tr>`;}
+  const dev=deviceInfo();
+  el.innerHTML=`
+  <div class="card p-green"><h3>ChatGPT 出口 IP：<span data-ip data-raw="${esc(info.ip)}">${esc(info.ip)}</span></h3><p><b style="font-size:28px">${sc.score}</b> / 100 ${scoreBadge(sc.score)}</p>${gaugeHTML(sc.score)}<p class="small">${esc(sc.reasons.join('；'))} · 来源：${esc(info.source)}</p></div>
+  <div class="card"><h3>属性</h3><div class="kv"><b>地区</b><span>${esc([info.country,info.region,info.city].filter(Boolean).join(' '))}</span><b>类型</b><span>${esc(info.hosting?'机房/托管':info.mobile?'移动':info.proxy?'代理特征':'住宅/普通宽带（启发式）')}</span><b>ASN</b><span>${esc(info.asn||'—')}</span><b>运营商</b><span>${esc(info.isp||'—')}</span><b>Cloudflare 节点</b><span>${esc(tr.loc||tr.colo||'—')}</span><b>IPv6 提示</b><span>${(info.ip||'').includes(':')?'当前为 IPv6 环境，部分服务对 IPv6 更严格，建议优先 IPv4 出口核对。':'当前为 IPv4 环境。'}</span></div></div>
+  <div class="card"><h3>安全检测</h3><p>VPN：${info.proxy?'疑似':'未见信号'} · 代理：${info.proxy?'是':'未见信号'} · Tor：未接入商业源，无法判定 · 机器人/滥用：未见信号（启发式）</p></div>
+  <div class="card"><h3>GPT / Codex 可用性</h3><table><tr><th>站点</th><th>延迟</th></tr>${rows}</table><p class="small">api.openai.com 是 Codex 与 API 走的接口，和网页认证链路不同，需单独看。</p></div>
+  <div class="card"><h3>设备信息（仅本页显示）</h3><div class="kv"><b>时区</b><span>${esc(dev.timezone)}</span><b>语言</b><span>${esc(dev.language)}</span><b>平台</b><span>${esc(dev.platform)}</span><b>触屏</b><span>${esc(dev.touch)}</span><b>Do Not Track</b><span>${esc(dev.dnt)}</span><b>WebGL</b><span>${esc(dev.webgl)}</span><b>Canvas 指纹摘要</b><span>${esc(dev.canvas)}</span></div></div>`;
+  setHide(document.getElementById('hideIp').checked);saveHistory('gpt',{ip:info.ip,label:sc.score+'分'});renderHistory('gpt','hist');
+ }catch(e){el.innerHTML='<p class="small">检测失败，请重试。</p>';}
+}
+document.getElementById('go').onclick=run;document.getElementById('hideIp').addEventListener('change',e=>setHide(e.target.checked));document.getElementById('clearHist').onclick=()=>{clearHistory('gpt');renderHistory('gpt','hist');};run();renderHistory('gpt','hist');
+</script></body></html>

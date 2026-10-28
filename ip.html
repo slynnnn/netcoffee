@@ -1,0 +1,45 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IP 评分 · 地理 / ASN / 风险 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>IP 深度评分</h1>
+<p class="lead">输入为空时查当前 IP。评分是本站启发式算法（免费接口信号加权），不是商业 IP 情报分数；要更准的商业评分，需接入 IPinfo / ipapi.is 等付费接口（见 README，可选环境变量）。</p>
+<div class="row"><input id="ipInput" placeholder="输入 IPv4 / IPv6，留空 = 当前 IP"><button id="go">查询</button><label><input type="checkbox" id="hideIp"> 隐藏 IP</label></div>
+<div id="out"></div>
+<h2>历史（仅本机）</h2><div id="hist"></div><button class="secondary" id="clearHist">清除历史</button>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="ip.html">IP评分</a><a href="cloudflare.html">Cloudflare</a><a href="whois.html">Whois查询</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+async function run(){
+  const q=document.getElementById('ipInput').value.trim();
+  const el=document.getElementById('out');el.innerHTML='<p class="small">查询中…</p>';
+  try{
+    const info=await getIPInfo(q||undefined);
+    const sc=heuristicScore(info);
+    const ports=info.ip?await checkCommonPorts(info.ip):[];
+    const mapLink=(info.lat&&info.lon)?`https://www.openstreetmap.org/?mlat=${info.lat}&mlon=${info.lon}#map=10/${info.lat}/${info.lon}`:'';
+    const flags=[];
+    if(info.proxy)flags.push('代理');if(info.hosting)flags.push('机房/托管');if(info.mobile)flags.push('移动');if(info.tor)flags.push('Tor');
+    el.innerHTML=`
+    <div class="card p-blue"><h3>IP：<span data-ip data-raw="${esc(info.ip)}">${esc(info.ip)}</span> ${scoreBadge(sc.score)}</h3>
+    <p><b style="font-size:28px">${sc.score}</b> / 100</p>${gaugeHTML(sc.score)}
+    <p class="small">依据：${esc(sc.reasons.join('；')||'—')}。来源：${esc(info.source)}。商业源未接入时，滥用/黑名单只能给“未见信号”，不能证明干净。</p></div>
+    <div class="card"><h3>类型 / ASN / ISP</h3><div class="kv"><b>类型</b><span>${esc(info.hosting?'机房/托管':info.mobile?'移动网络':info.proxy?'代理特征':'住宅/普通宽带（启发式）')}</span><b>ASN</b><span>${esc(info.asn||'—')}</span><b>ISP / 组织</b><span>${esc(info.isp||info.org||'—')}</span><b>时区</b><span>${esc(info.timezone||'—')}</span><b>Bogon</b><span>${isBogon(info.ip)?'是（保留/特殊地址）':'否'}</span><b>反向 DNS</b><span>浏览器无法直接做 PTR 查询；可用 Whois 页的 RDAP / 外链工具核对。</span></div></div>
+    <div class="card"><h3>多源地理</h3><p>${esc([info.country,info.region,info.city,info.zip].filter(Boolean).join(' '))||'—'} ${info.lat?`（${info.lat}, ${info.lon}）`:''}</p>${mapLink?`<p><a href="${mapLink}" target="_blank" rel="noopener">在 OpenStreetMap 打开位置 ↗</a></p>`:''}<p class="small">免费接口的地理常有城市级误差，同一 IP 在不同源结果不同属正常。</p></div>
+    <div class="card"><h3>风险信号</h3><p>VPN：${info.proxy?'疑似':'未见信号'} · 代理：${info.proxy?'是':'未见信号'} · Tor：未接入商业源，无法判定 · 爬虫：未见信号（启发式）</p><p class="small">滥用 / DNSBL：未接入 AbuseIPDB 等商业源时不做“干净”结论。下面外链可人工核对（第三方站点，与本站无关）：</p>
+    <p><a href="https://www.abuseipdb.com/check/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">AbuseIPDB ↗</a> · <a href="https://www.virustotal.com/gui/ip-address/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">VirusTotal ↗</a> · <a href="https://www.shodan.io/host/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">Shodan ↗</a> · <a href="https://bgp.tools/prefix/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">BGP.tools ↗</a></p></div>
+    <div class="card"><h3>常见端口（浏览器近似）</h3><p class="small">浏览器不能做原始 TCP 端口扫描。下表只测 80/443 的网页可达性，其余端口显示“无法直接探测”，不要误读为关闭。</p><table><tr><th>端口</th><th>结果</th></tr>${ports.map(p=>`<tr><td>${p.port}</td><td>${p.reachable?'网页可达（'+p.ms+'ms）':'不可达/超时'}</td></tr>`).join('')}<tr><td>22 / 25 / 53 / 3389 等</td><td>浏览器无法直接探测</td></tr></table></div>
+    <div class="card"><h3>BGP 路径（说明）</h3><p class="small">真实 BGP 路径需 BGP 查看点 / RIPE RIS 等数据源，本页不伪造路径图。可用上方 BGP.tools 外链查看该 IP 的前缀与 ASN 关系。</p></div>`;
+    document.querySelectorAll('[data-ip]').forEach(n=>{n.dataset.raw=info.ip;});
+    setHide(document.getElementById('hideIp').checked);
+    saveHistory('ip',{ip:info.ip,label:sc.score+'分'});renderHistory('ip','hist');
+  }catch(e){el.innerHTML='<p class="small">查询失败：免费接口可能限流，请稍后重试。</p>';}
+}
+document.getElementById('go').onclick=run;
+document.getElementById('hideIp').addEventListener('change',e=>setHide(e.target.checked));
+document.getElementById('clearHist').onclick=()=>{clearHistory('ip');renderHistory('ip','hist');};
+const pre=new URLSearchParams(location.search).get('ip');if(pre)document.getElementById('ipInput').value=pre;
+run();renderHistory('ip','hist');
+</script></body></html>

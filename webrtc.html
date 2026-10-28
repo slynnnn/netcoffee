@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WebRTC 泄露检测 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>WebRTC 泄露检测</h1>
+<p class="lead">WebRTC 建立点对点连接时会通过 STUN 服务器发现你的外网 IP，这个过程走 UDP。很多代理只处理 TCP，于是 STUN 可能绕过代理，直接暴露真实 IP。本页同时向多个公共 STUN 服务器发请求，收集所有返回的 IP 并与你的出口 IP 对比。</p>
+<div class="note">注意模式差异：系统代理模式下 STUN 的 UDP 发不出去，显示“无泄露”可能是假象；TUN 模式下 UDP 能发出，结果才真实反映 UDP 出口。多个不同 IP 不一定是泄露——分流规则本来就可能把不同 STUN 服务器路由到不同出口；只有当 STUN 返回的是你本地运营商 IP、而你本应走代理时，才是真泄露。</div>
+<div class="row"><button id="go">开始检测</button><label><input type="checkbox" id="hideIp"> 隐藏 IP</label></div>
+<div id="out"></div>
+<h2>发现泄露怎么办（简述）</h2>
+<ul><li>Firefox：about:config 里把 media.peerconnection.enabled 设为 false。</li><li>Chrome / Edge：用 uBlock Origin 的“阻止 WebRTC 泄露本地 IP”选项。</li><li>Brave：隐私设置里选“禁用非代理 UDP”。</li><li>进阶：代理客户端里对 STUN 流量单独做 UDP 分流，走代理出口。</li></ul>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="webrtc.html">WebRTC</a><a href="dns.html">DNS泄露</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+async function run(){
+ const out=document.getElementById('out');out.innerHTML='<p class="small">检测中…（约 10 秒）</p>';
+ let main='';try{const info=await getIPInfo();main=info.ip||'';}catch(e){}
+ const servers=['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun2.l.google.com:19302','stun:stun.cloudflare.com:3478','stun:stun.stunprotocol.org:3478'];
+ const found=new Map();
+ try{
+  const pc=new RTCPeerConnection({iceServers:servers.map(u=>({urls:u}))});
+  pc.createDataChannel('test');
+  const done=new Promise(res=>{pc.onicecandidate=e=>{if(!e.candidate)res();};setTimeout(res,10000);});
+  pc.onicecandidate=e=>{if(e.candidate&&e.candidate.candidate){const m=e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+|[0-9a-fA-F:]+:[0-9a-fA-F:]+)/);if(m&&!m[1].startsWith('192.168.')&&!m[1].startsWith('10.')&&!m[1].startsWith('172.'))found.set(m[1],e.candidate.candidate);}};
+  const offer=await pc.createOffer();await pc.setLocalDescription(offer);await done;pc.close();
+ }catch(e){out.innerHTML='<p class="small">浏览器不支持或阻止了 WebRTC 检测。</p>';return;}
+ let html=`<div class="card"><h3>你的出口 IP：<span data-ip data-raw="${esc(main)}">${esc(main)}</span></h3>`;
+ if(!found.size){html+=`<p><span class="badge ok">未发现公网 IP</span> — 可能是 WebRTC 被禁用，或 UDP 发不出去（见顶部模式说明）。</p>`;}
+ else{found.forEach((cand,ip)=>{const same=ip===main;html+=`<p>${esc(ip)} ${same?'<span class="badge ok">与出口一致</span>':'<span class="badge warn">与出口不同，需对照分流规则</span>'}</p><p class="small">${esc(cand)}</p>`;});}
+ html+='</div>';out.innerHTML=html;setHide(document.getElementById('hideIp').checked);
+}
+document.getElementById('go').onclick=run;document.getElementById('hideIp').addEventListener('change',e=>setHide(e.target.checked));run();
+</script></body></html>

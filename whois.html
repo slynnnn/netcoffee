@@ -1,0 +1,43 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Whois / RDAP 查询 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
+<header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+</nav></div></header>
+<div class="wrap">
+<h1>Whois / RDAP 查询</h1>
+<p class="lead">支持域名、IPv4、IPv6、AS 号。优先走 RDAP（结构化 JSON，直连注册局），注册局未提供 RDAP 时再走传统 Whois（43 端口，需后端，浏览器版只提示）。</p>
+<div class="note">覆盖说明：本站不宣称“1400+ 后缀全覆盖”，实际覆盖取决于各注册局是否提供 RDAP 端点。本实现走 rdap.org 引导 + 常见注册局端点；未覆盖的后缀会如实返回“未找到 RDAP 端点”，而不是编造数据。</div>
+<div class="row"><input id="q" placeholder="如 example.com、1.1.1.1、AS13335"><button id="go">查询</button></div>
+<div id="out"></div>
+<h2>状态代码中文说明</h2>
+<table><tr><th>代码</th><th>含义</th></tr>
+<tr><td>clientTransferProhibited</td><td>注册商转移锁，正常保护</td></tr>
+<tr><td>serverDeleteProhibited</td><td>注册局删除锁，正常保护</td></tr>
+<tr><td>clientHold</td><td>暂停解析，异常，需注意</td></tr>
+<tr><td>pendingDelete</td><td>等待删除，即将掉出</td></tr>
+<tr><td>ok / active</td><td>正常</td></tr></table>
+<p class="small">隐私说明：受 GDPR 等法规影响，多数注册局已隐藏个人注册信息，只保留注册商、日期、DNS、状态等技术信息，属正常现象。</p>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="whois.html">Whois查询</a><a href="ip.html">IP评分</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+</div><script src="assets/app.js"></script>
+<script>
+const STATUS_ZH={clientTransferProhibited:'注册商转移锁（正常保护）',serverTransferProhibited:'注册局转移锁',serverDeleteProhibited:'注册局删除锁',clientDeleteProhibited:'注册商删除锁',clientHold:'暂停解析（异常）',serverHold:'注册局暂停（异常）',pendingDelete:'等待删除',ok:'正常',active:'正常'};
+async function run(){
+ const q=document.getElementById('q').value.trim();const out=document.getElementById('out');if(!q){out.innerHTML='<p class="small">请先输入。</p>';return;}
+ out.innerHTML='<p class="small">查询中…</p>';
+ try{const j=await fetchJSON('/api/whois?q='+encodeURIComponent(q),{},15000);render(j);return;}catch(e){}
+ // direct rdap.org fallback
+ try{
+  let url='';if(/^AS\d+$/i.test(q))url='https://rdap.org/autnum/'+q.replace(/^AS/i,'');else if(/^\d+\.\d+\.\d+\.\d+$/.test(q)||q.includes(':'))url='https://rdap.org/ip/'+encodeURIComponent(q);else url='https://rdap.org/domain/'+encodeURIComponent(q);
+  const j=await fetchJSON(url,{},10000);render({raw:j,source:'rdap.org 直连'});return;
+ }catch(e){out.innerHTML='<p class="small">查询失败：该对象无 RDAP 端点，或接口被拦截。传统 Whois（43 端口）需后端支持，见 README。</p>';}
+}
+function render(j){
+ const r=j.raw||j;const out=document.getElementById('out');
+ const entities=(r.entities||[]).map(e=>e.vcardArray?.[1]?.find?.(x=>x[0]==='fn')?.[3]||e.handle||'').filter(Boolean).join('，');
+ const events={};(r.events||[]).forEach(e=>events[e.eventAction]=e.eventDate);
+ const ns=(r.nameservers||[]).map(n=>n.ldhName).join(', ');
+ const status=(r.status||[]).map(s=>`${s}（${STATUS_ZH[s]||'见上表'}）`).join('；');
+ out.innerHTML=`<div class="card"><h3>${esc(r.ldhName||r.handle||r.startAddress||'查询结果')}</h3><div class="kv"><b>类型</b><span>${esc(r.objectClassName||'—')}</span><b>注册商 / 实体</b><span>${esc(entities||'—')}</span><b>注册时间</b><span>${esc(events.registration||'—')}</span><b>到期时间</b><span>${esc(events.expiration||'—')}</span><b>最后变更</b><span>${esc(events['last changed']||'—')}</span><b>DNS</b><span>${esc(ns||'—')}</span><b>状态</b><span>${esc(status||'—')}</span><b>IP 段</b><span>${esc(r.startAddress&&r.endAddress?r.startAddress+' – '+r.endAddress:'—')}</span><b>国家</b><span>${esc(r.country||'—')}</span><b>数据来源</b><span>${esc(j.source||'RDAP')}</span></div><details><summary>原始 JSON（可展开）</summary><pre style="white-space:pre-wrap;word-break:break-all;font-size:12px">${esc(JSON.stringify(r,null,2).slice(0,8000))}</pre></details></div>`;
+}
+document.getElementById('go').onclick=run;
+</script></body></html>
