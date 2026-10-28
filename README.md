@@ -2,26 +2,27 @@
 
 本站是参照 ip.net.coffee 这类工具站的**功能与版式思路**重新写的自有实现：所有代码、文案、样式名均为本站原创，没有复制对方源码、Logo、图片或长篇文章。目标是把它变成你自己的资产：换域名、换品牌名、改配色都可以直接改。
 
-- 布局：白底、居中单列（最宽 760px）、顶部单行导航 + 主题按钮（浅色 / 深色 / 跟随系统）、圆角卡片、底部只有工具链接。
+- 布局：白底、居中单列（最宽 760px）、顶部导航（前 10 个工具直显 + “更多”下拉：Whois / AI资讯 / IP卡片）+ 主题按钮（浅色 / 深色 / 跟随系统，可持久化）、圆角卡片、底部只有工具链接；输入框字号 16px（iOS 不自动放大），表格可横向滚动、无横向溢出。
+- v2（外观 + 功能更贴近参考站的版式与深度，代码/文案仍为本站原创）：首页新增 13 张彩色工具卡墙；IP 评分新增多源地理对比、ASN/RDAP 详情、BGP 前缀、反向 DNS 说明、DNSBL 诚实口径；Claude/GPT 新增完整设备指纹（浏览器、网络类型、WebGL、Canvas 摘要）与 DNS/WebRTC 摘要链接；Cloudflare 等级表改为各站 /cdn-cgi/trace 实测节点代码 + 延迟；DNS 改为快速/深度两档 + 1/5 式步骤进度；WebRTC 改为逐 STUN 服务器结果 + UDP vs TCP 对比结论；Whois 加快捷示例；IP 卡片样式 8 → 16 种、贴纸 6 → 12 种。
 - 原则：免费、无登录、无付费墙、不在服务器记录查询；历史只存在浏览器 localStorage。
 
 ## 工具清单（13 个，全部从顶部导航 + 首页可达）
 
 | 路径 | 功能 |
 |---|---|
-| `/` index.html | 当前 IPv4/IPv6、归属地/ISP/类型、隐藏 IP 开关、6 站延迟预览、分流出口表（国内/国际 × 社交/AI/加密/工具/测速/静态/开发/媒体，37 站） |
-| `/claude.html` | Claude 出口 IP 纯净度、0–100 启发式分数、类型/ASN、安全信号、claude.ai 与 anthropic.com 延迟、设备/时区/指纹摘要 |
-| `/ip.html` | IP 深度评分：输入为空 = 当前 IP；地理/ASN/ISP、Bogon、反向 DNS 说明、常见端口浏览器近似、风险信号、多源地理 + 地图链接、BGP 说明、外链 Shodan / AbuseIPDB / VirusTotal / BGP.tools（仅链接） |
-| `/gpt.html` | ChatGPT / Codex 同款：chatgpt.com、api.openai.com、openai.com 三行分开测，Codex 用户看 API 行 |
+| `/` index.html | 当前 IPv4/IPv6、归属地/ISP/类型、隐藏 IP 开关、13 张彩色工具卡墙、6 站延迟预览、分流出口表（国内/国际 × 社交/AI/加密/工具/测速/静态/开发/媒体，37 站） |
+| `/claude.html` | Claude 出口 IP 纯净度、0–100 启发式分数、类型/ASN、安全信号、claude.ai 与 anthropic.com 延迟、完整设备指纹（浏览器/网络类型/WebGL/Canvas 摘要）、DNS 与 WebRTC 摘要链接、仅本机历史 |
+| `/ip.html` | IP 深度评分：输入为空 = 当前 IP；地理/ASN/ISP、Bogon、反向 DNS 说明、常见端口浏览器近似、风险信号、多源地理对比表（ip-api + ipapi.co + Cloudflare trace，不一致标出）、ASN/RDAP 详情、BGP 前缀（RDAP 实测）、DNSBL 诚实口径 + 地图链接、外链 Shodan / AbuseIPDB / VirusTotal / BGP.tools（仅链接） |
+| `/gpt.html` | ChatGPT / Codex 同款：chatgpt.com、api.openai.com、openai.com 三行分开测，Codex 用户看 API 行；完整设备指纹与 DNS/WebRTC 摘要同 Claude 页 |
 | `/link.html` | 网络连通：中国 / 日本 / 美国 / 全球四组，每站 ms 与优/良/慢/超时颜色，每组可达数 + 平均延迟 |
-| `/dns.html` | DNS 泄露：公共 DoH 解析器实测 + 简短自查指南；见下方“诚实边界” |
-| `/webrtc.html` | WebRTC / STUN：多公共 STUN 服务器、收集全部 IP、与出口 IP 对比、代理模式与 TUN 模式差异说明 |
-| `/cloudflare.html` | Cloudflare：cdn-cgi/trace 的 colo 代码 + 城市、WARP、HTTP/TLS、等级对比表（免费/企业/WARP/测速/静态/Workers）、测速（需手动确认，见警告）、启发式风险、Turnstile 占位说明 |
-| `/ping.html` | 全球 Ping：浏览器 3 次 min/avg/max + 20 节点表（亚洲 8、美洲 4、欧洲 8）+ 边缘 Function 近似；见下方“诚实边界” |
+| `/dns.html` | DNS 泄露：快速/深度两档 + 步骤进度，公共 DoH 解析器实测（深度多测 Quad9、AliDNS）+ 简短自查指南；见下方“诚实边界” |
+| `/webrtc.html` | WebRTC / STUN：逐 STUN 服务器结果表、收集全部 IP、UDP vs TCP 对比结论、代理模式与 TUN 模式差异说明 |
+| `/cloudflare.html` | Cloudflare：cdn-cgi/trace 的 colo 代码 + 城市、WARP、HTTP/TLS、等级对比表（各站 trace 实测节点代码 + 延迟）、测速（需手动确认，见警告）、启发式风险、Turnstile 占位说明 |
+| `/ping.html` | 全球 Ping：浏览器 3 次 min/avg/max + 20 节点表（亚洲 8、美洲 4、欧洲 8，全部“未接入真实节点”）+ 边缘 Function 近似；见下方“诚实边界” |
 | `/status.html` | 服务状态：31 个服务（AI 8、云服务 6、开发 12、社区 5），故障置顶、运行中在下、未知不猜正常；经 `/api/status`，10 分钟缓存 |
-| `/whois.html` | Whois / RDAP：域名 / IPv4 / IPv6 / AS 号，RDAP 优先，状态代码中文说明 |
+| `/whois.html` | Whois / RDAP：域名 / IPv4 / IPv6 / AS 号，RDAP 优先，状态代码中文说明，快捷示例（example.com / 1.1.1.1 / AS13335） |
 | `/news.html` | AI 资讯：分类（全部/OpenAI/Claude/ChatGPT/Codex/API/Claude Code/Gemini/MCP）+ 分页，经 `/api/news` 抓公开 RSS |
-| `/card/` card/index.html | IP 卡片：8 种原创样式、7 种配色（含跟随样式）、6 种贴纸、宽度 240/360/480/560、随机组合、SVG 预览、下载 PNG/SVG、HTML / Markdown / BBCode 嵌入代码、分享链接（hash 参数，不上传 IP） |
+| `/card/` card/index.html | IP 卡片：16 种原创样式、7 种配色（含跟随样式）、12 种贴纸、宽度 240/360/480/560、随机组合、SVG 预览、下载 PNG/SVG、HTML / Markdown / BBCode 嵌入代码、分享链接（hash 参数，不上传 IP） |
 
 ## 本地运行
 

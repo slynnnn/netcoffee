@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WebRTC 泄露检测 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
 <header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
-<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><span class="dropdown"><button class="dropbtn" type="button">更多 ▾</button><span class="dropmenu"><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></span></span>
 </nav></div></header>
 <div class="wrap">
 <h1>WebRTC 泄露检测</h1>
@@ -11,25 +11,39 @@
 <div id="out"></div>
 <h2>发现泄露怎么办（简述）</h2>
 <ul><li>Firefox：about:config 里把 media.peerconnection.enabled 设为 false。</li><li>Chrome / Edge：用 uBlock Origin 的“阻止 WebRTC 泄露本地 IP”选项。</li><li>Brave：隐私设置里选“禁用非代理 UDP”。</li><li>进阶：代理客户端里对 STUN 流量单独做 UDP 分流，走代理出口。</li></ul>
-<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="webrtc.html">WebRTC</a><a href="dns.html">DNS泄露</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询；历史只存浏览器本地。</p></footer>
 </div><script src="assets/app.js"></script>
 <script>
+async function probeOne(server){
+  return new Promise(async resolve=>{
+    const found=new Set();
+    try{
+      const pc=new RTCPeerConnection({iceServers:[{urls:server}]});
+      pc.createDataChannel('test');
+      let done=false;
+      const finish=()=>{if(!done){done=true;try{pc.close();}catch(e){}resolve([...found]);}};
+      pc.onicecandidate=e=>{if(e.candidate&&e.candidate.candidate){const m=e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+|[0-9a-fA-F:]+:[0-9a-fA-F:]+)/);if(m&&!m[1].startsWith('192.168.')&&!m[1].startsWith('10.')&&!m[1].startsWith('172.'))found.add(m[1]);}if(!e.candidate)finish();};
+      const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+      setTimeout(finish,6000);
+    }catch(e){resolve([]);}
+  });
+}
 async function run(){
- const out=document.getElementById('out');out.innerHTML='<p class="small">检测中…（约 10 秒）</p>';
+ const out=document.getElementById('out');out.innerHTML='<p class="small">检测中…（逐个 STUN 服务器，约 10–30 秒）</p>';
  let main='';try{const info=await getIPInfo();main=info.ip||'';}catch(e){}
- const servers=['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun2.l.google.com:19302','stun:stun.cloudflare.com:3478','stun:stun.stunprotocol.org:3478'];
- const found=new Map();
- try{
-  const pc=new RTCPeerConnection({iceServers:servers.map(u=>({urls:u}))});
-  pc.createDataChannel('test');
-  const done=new Promise(res=>{pc.onicecandidate=e=>{if(!e.candidate)res();};setTimeout(res,10000);});
-  pc.onicecandidate=e=>{if(e.candidate&&e.candidate.candidate){const m=e.candidate.candidate.match(/(\d+\.\d+\.\d+\.\d+|[0-9a-fA-F:]+:[0-9a-fA-F:]+)/);if(m&&!m[1].startsWith('192.168.')&&!m[1].startsWith('10.')&&!m[1].startsWith('172.'))found.set(m[1],e.candidate.candidate);}};
-  const offer=await pc.createOffer();await pc.setLocalDescription(offer);await done;pc.close();
- }catch(e){out.innerHTML='<p class="small">浏览器不支持或阻止了 WebRTC 检测。</p>';return;}
- let html=`<div class="card"><h3>你的出口 IP：<span data-ip data-raw="${esc(main)}">${esc(main)}</span></h3>`;
- if(!found.size){html+=`<p><span class="badge ok">未发现公网 IP</span> — 可能是 WebRTC 被禁用，或 UDP 发不出去（见顶部模式说明）。</p>`;}
- else{found.forEach((cand,ip)=>{const same=ip===main;html+=`<p>${esc(ip)} ${same?'<span class="badge ok">与出口一致</span>':'<span class="badge warn">与出口不同，需对照分流规则</span>'}</p><p class="small">${esc(cand)}</p>`;});}
- html+='</div>';out.innerHTML=html;setHide(document.getElementById('hideIp').checked);
+ const servers=['stun:stun.l.google.com:19302','stun:stun1.l.google.com:19302','stun:stun.cloudflare.com:3478','stun:stun.stunprotocol.org:3478'];
+ let rows='',all=new Set();
+ for(const s of servers){
+   const ips=await probeOne(s);ips.forEach(x=>all.add(x));
+   rows+=`<tr><td>${esc(s)}</td><td>${ips.length?ips.map(x=>esc(x)+(x===main?' <span class="badge ok">与出口一致</span>':' <span class="badge warn">与出口不同</span>')).join('<br>'):'<span class="badge grey">无公网 IP 返回</span>'}</td></tr>`;
+   out.innerHTML=`<div class="card"><h3>逐 STUN 服务器结果（进行中）</h3><div class="tablewrap"><table><tr><th>STUN 服务器</th><th>返回 IP</th></tr>${rows}</table></div></div>`;
+ }
+ let verdict='';
+ if(!all.size)verdict='<span class="badge ok">未发现公网 IP</span> — 可能是 WebRTC 被禁用，或 UDP 发不出去（系统代理模式下属假象，见顶部说明）。';
+ else if([...all].every(x=>x===main))verdict='<span class="badge ok">UDP 与 TCP 出口一致</span> — STUN 返回的都是你的出口 IP，未见绕过代理。';
+ else verdict='<span class="badge warn">UDP 与 TCP 出口不一致</span> — 部分 STUN 走了不同出口；先对照你的分流规则：若规则本就把不同 STUN 路由到不同出口，属正常；若返回的是本地运营商 IP，才是真泄露。';
+ out.innerHTML=`<div class="card"><h3>你的 TCP 出口 IP：<span data-ip data-raw="${esc(main)}">${esc(main)}</span></h3><p>${verdict}</p><div class="tablewrap"><table><tr><th>STUN 服务器</th><th>返回 IP</th></tr>${rows}</table></div></div><div class="card"><h3>UDP vs TCP 对比</h3><p class="small">TCP 出口是你访问网站时对方看到的 IP；UDP 出口是 STUN 看到的 IP。两者一致 = UDP 被正确接管；不一致 = UDP 走了另一条路（可能是分流，也可能是泄露，需按上条判断）。TUN 模式下 UDP 能发出，结果最真实；系统代理模式下 UDP 发不出去，“无泄露”不可信。</p></div>`;
+ setHide(document.getElementById('hideIp').checked);
 }
 document.getElementById('go').onclick=run;document.getElementById('hideIp').addEventListener('change',e=>setHide(e.target.checked));run();
 </script></body></html>

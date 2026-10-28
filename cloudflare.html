@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cloudflare 节点检测 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
 <header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
-<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><span class="dropdown"><button class="dropbtn" type="button">更多 ▾</button><span class="dropmenu"><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></span></span>
 </nav></div></header>
 <div class="wrap">
 <h1>Cloudflare 节点检测</h1>
@@ -19,7 +19,7 @@
 <div id="risk"></div>
 <p class="small">Turnstile 说明：真正的人机验证需要你自己的 Cloudflare Turnstile 站点密钥（sitekey），本站不伪造“通过”结果。下方是占位说明：接入 sitekey 后，可在此做非交互 / 托管两种模式的实测并把 token 送服务端二次校验；未接入时只显示“未配置”。</p>
 <div class="card"><h3>Turnstile 检查</h3><p><span class="badge grey">未配置 sitekey</span> — 需要你自己的 Turnstile sitekey 才能实测，见 README。</p></div>
-<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="cloudflare.html">Cloudflare</a><a href="ip.html">IP评分</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询；历史只存浏览器本地。</p></footer>
 </div><script src="assets/app.js"></script>
 <script>
 async function run(){
@@ -32,10 +32,15 @@ async function run(){
  <div class="kv"><b>边缘节点 colo</b><span>${esc(tr.colo||'—')}（${esc(coloCity(tr.colo||''))}）</span><b>地区</b><span>${esc(tr.loc||'—')}</span><b>WARP</b><span>${esc(tr.warp||'—')}（on = 经 WARP，出口会变成 Cloudflare 自身 AS13335 的 IP）</span><b>HTTP 版本</b><span>${esc(tr.http||'—')}</span><b>TLS 版本</b><span>${esc(tr.tls||'—')}</span><b>协议 / 其他</b><span>${esc(tr.h||'') } ${esc(tr.sni||'')}</span></div></div>`;
  document.getElementById('risk').innerHTML=`<div class="card"><p>启发式风险：${sc.score} / 100 ${scoreBadge(sc.score)}</p><p class="small">公开代理：${info.proxy?'疑似':'未见信号'} · 住宅代理：未接入商业源 · 企业代理：未见信号 · VPN：${info.proxy?'疑似':'未见信号'} · Tor：无法判定 · 机房 IP：${info.hosting?'是':'否'} · 滥用记录：未接入商业源时不做结论。仅开放高置信度信号，未检测到不代表绝对安全。</p></div>`;
  setHide(document.getElementById('hideIp').checked);
- const tiers=[['本站（免费版）','cloudflare.com'],['企业版示例','www.cloudflare.com'],['WARP / 1.1.1.1','one.one.one.one'],['测速网络','speed.cloudflare.com'],['静态 CDN','cdnjs.cloudflare.com'],['Workers','workers.dev']];
+ const tiers=[['本站 trace','cloudflare.com'],['企业版示例','www.cloudflare.com'],['WARP / 1.1.1.1','one.one.one.one'],['测速网络','speed.cloudflare.com'],['静态 CDN','cdnjs.cloudflare.com'],['Workers','workers.dev']];
  let rows='';
- for(const [label,dom] of tiers){const ms=await timedFetch('https://'+dom+'/favicon.ico',5000);rows+=`<tr><td>${label}</td><td>${esc(dom)}</td><td>${latencyLabel(ms)}</td><td>浏览器实测，非节点代码</td></tr>`;}
- document.getElementById('tiers').innerHTML=`<table><tr><th>网络</th><th>站点</th><th>延迟</th><th>说明</th></tr>${rows}</table><p class="small">节点代码以 trace 结果为准；上表延迟是浏览器到各站的实测，用于横向对比。</p>`;
+ for(const [label,dom] of tiers){
+   const ms=await timedFetch('https://'+dom+'/favicon.ico',5000);
+   let colo='—';
+   try{const r=await fetch('https://'+dom+'/cdn-cgi/trace');const txt=await r.text();const m=txt.match(/colo=([A-Z]+)/);if(m)colo=m[1]+'（'+coloCity(m[1])+'）';}catch(e){}
+   rows+=`<tr><td>${label}</td><td>${esc(dom)}</td><td>${latencyLabel(ms)}</td><td>${esc(colo)}</td></tr>`;
+ }
+ document.getElementById('tiers').innerHTML=`<div class="tablewrap"><table><tr><th>网络</th><th>站点</th><th>延迟</th><th>节点代码（trace 实测）</th></tr>${rows}</table></div><p class="small">节点代码来自各站 /cdn-cgi/trace 的实测；未返回代码的站显示“—”，表示该站未开放 trace，不是节点未知就猜一个。延迟是浏览器到各站的实测，用于横向对比。</p>`;
 }
 let stopFlag=false;
 document.getElementById('speedBtn').onclick=async()=>{

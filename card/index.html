@@ -1,15 +1,15 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IP 卡片生成器 — IP 工具</title><link rel="stylesheet" href="../assets/style.css"></head><body>
 <header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
-<a href="../index.html">IP查询</a><a href="../claude.html">Claude</a><a href="../ip.html">IP评分</a><a href="../gpt.html">GPT检测</a><a href="../link.html">网络连通</a><a href="../dns.html">DNS泄露</a><a href="../webrtc.html">WebRTC</a><a href="../cloudflare.html">Cloudflare</a><a href="../ping.html">全球Ping</a><a href="../status.html">服务状态</a><a href="../whois.html">Whois查询</a><a href="../news.html">AI资讯</a><a href="./">IP卡片</a>
+<a href="../index.html">IP查询</a><a href="../claude.html">Claude</a><a href="../ip.html">IP评分</a><a href="../gpt.html">GPT检测</a><a href="../link.html">网络连通</a><a href="../dns.html">DNS泄露</a><a href="../webrtc.html">WebRTC</a><a href="../cloudflare.html">Cloudflare</a><a href="../ping.html">全球Ping</a><a href="../status.html">服务状态</a><span class="dropdown"><button class="dropbtn" type="button">更多 ▾</button><span class="dropmenu"><a href="../whois.html">Whois查询</a><a href="../news.html">AI资讯</a><a href="../card/">IP卡片</a></span></span>
 </nav></div></header>
 <div class="wrap">
 <h1>IP 卡片生成器</h1>
 <p class="lead">用当前 IP 生成一张可分享卡片。样式与配色均为本站原创命名，不照搬他人已有的样式名。SVG 预览可直接下载，也可复制嵌入代码。</p>
 <div class="row">
-<label>样式 <select id="style"><option value="sunset">落日暖调</option><option value="ocean">深海蓝调</option><option value="mint">薄荷清新</option><option value="mono">黑白极简</option><option value="violet">紫夜星空</option><option value="paper">米纸素雅</option><option value="neon">霓虹夜市</option><option value="forest">森林晨雾</option></select></label>
+<label>样式 <select id="style"><option value="sunset">落日暖调</option><option value="ocean">深海蓝调</option><option value="mint">薄荷清新</option><option value="mono">黑白极简</option><option value="violet">紫夜星空</option><option value="paper">米纸素雅</option><option value="neon">霓虹夜市</option><option value="forest">森林晨雾</option><option value="dawn">破晓粉霞</option><option value="desert">沙漠金黄</option><option value="glacier">冰川浅蓝</option><option value="ember">余烬暗红</option><option value="meadow">草甸春绿</option><option value="harbor">港湾雾蓝</option><option value="ink">水墨灰青</option><option value="candy">糖果亮彩</option></select></label>
 <label>配色 <select id="color"><option value="auto">跟随样式</option><option value="blue">蓝</option><option value="pink">粉</option><option value="green">绿</option><option value="orange">橙</option><option value="purple">紫</option><option value="dark">深色</option></select></label>
-<label>贴纸 <select id="sticker"><option value="none">无</option><option value="coffee">☕ 咖啡</option><option value="rocket">🚀 火箭</option><option value="shield">🛡️ 护盾</option><option value="globe">🌍 地球</option><option value="bolt">⚡ 闪电</option><option value="star">⭐ 星星</option></select></label>
+<label>贴纸 <select id="sticker"><option value="none">无</option><option value="coffee">☕ 咖啡</option><option value="rocket">🚀 火箭</option><option value="shield">🛡️ 护盾</option><option value="globe">🌍 地球</option><option value="bolt">⚡ 闪电</option><option value="star">⭐ 星星</option><option value="moon">🌙 月亮</option><option value="leaf">🍃 叶子</option><option value="fire">🔥 火焰</option><option value="gem">💎 宝石</option><option value="anchor">⚓ 船锚</option><option value="key">🔑 钥匙</option></select></label>
 <label>宽度 <select id="width"><option value="240">240</option><option value="360" selected>360</option><option value="480">480</option><option value="560">560</option></select></label>
 <button id="random">随机组合</button><button id="refresh">刷新我的 IP</button>
 </div>
@@ -19,17 +19,17 @@
 <div class="row"><button class="secondary" data-code="html">HTML</button><button class="secondary" data-code="md">Markdown</button><button class="secondary" data-code="bb">BBCode</button></div>
 <textarea id="code" rows="4" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)"></textarea>
 <p class="small">分享链接只把样式参数放进 URL hash，不把你的 IP 上传到服务器；打开链接的人看到的是他自己的 IP（除非你在代码里写死）。</p>
-<footer><div class="footlinks"><a href="../index.html">IP查询</a><a href="../ip.html">IP评分</a><a href="./">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+<footer><div class="footlinks"><a href="../index.html">IP查询</a><a href="../claude.html">Claude</a><a href="../ip.html">IP评分</a><a href="../gpt.html">GPT检测</a><a href="../link.html">网络连通</a><a href="../dns.html">DNS泄露</a><a href="../webrtc.html">WebRTC</a><a href="../cloudflare.html">Cloudflare</a><a href="../ping.html">全球Ping</a><a href="../status.html">服务状态</a><a href="../whois.html">Whois查询</a><a href="../news.html">AI资讯</a><a href="../card/">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询；历史只存浏览器本地。</p></footer>
 </div><script src="../assets/app.js"></script>
 <script>
-const STYLES={sunset:['#ff9a5c','#ffd166'],ocean:['#1e6fd9','#4dd0d0'],mint:['#2fbf8f','#b8e6c8'],mono:['#222222','#888888'],violet:['#6c5ce7','#a99bff'],paper:['#d9c7a5','#f5efe0'],neon:['#ff2e88','#00e5ff'],forest:['#2e7d4f','#a8d5a2']};
+const STYLES={sunset:['#ff9a5c','#ffd166'],ocean:['#1e6fd9','#4dd0d0'],mint:['#2fbf8f','#b8e6c8'],mono:['#222222','#888888'],violet:['#6c5ce7','#a99bff'],paper:['#d9c7a5','#f5efe0'],neon:['#ff2e88','#00e5ff'],forest:['#2e7d4f','#a8d5a2'],dawn:['#ff7eb3','#ffd6e8'],desert:['#d9a441','#f2e3b3'],glacier:['#7ec8e3','#e8f4fa'],ember:['#b33a2b','#f2b8a0'],meadow:['#6abf69','#dff2d0'],harbor:['#4a6fa5','#c8d8e8'],ink:['#3a4a4a','#d0d8d8'],candy:['#ff6b9d','#ffe066']};
 const COLORS={blue:'#1e6fd9',pink:'#e75480',green:'#2fbf8f',orange:'#ff7a2f',purple:'#6c5ce7',dark:'#222222'};
 let INFO={ip:'—',loc:'—',isp:'—',score:'—'};
 function buildSVG(){
  const w=+document.getElementById('width').value;const h=Math.round(w*0.56);
  const style=document.getElementById('style').value;const col=document.getElementById('color').value;
  const [c1,c2]=STYLES[style];const accent=col==='auto'?c1:COLORS[col];
- const sticker=document.getElementById('sticker').value;const emoji={coffee:'☕',rocket:'🚀',shield:'🛡️',globe:'🌍',bolt:'⚡',star:'⭐'}[sticker]||'';
+ const sticker=document.getElementById('sticker').value;const emoji={coffee:'☕',rocket:'🚀',shield:'🛡️',globe:'🌍',bolt:'⚡',star:'⭐',moon:'🌙',leaf:'🍃',fire:'🔥',gem:'💎',anchor:'⚓',key:'🔑'}[sticker]||'';
  const esc2=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect width="${w}" height="${h}" rx="18" fill="url(#g)"/><text x="24" y="42" font-family="sans-serif" font-size="20" font-weight="bold" fill="#fff">我的 IP 卡片 ${emoji}</text><text x="24" y="84" font-family="monospace" font-size="${w>=480?26:20}" font-weight="bold" fill="#fff">${esc2(INFO.ip)}</text><text x="24" y="112" font-family="sans-serif" font-size="14" fill="#fff">${esc2(INFO.loc)} · ${esc2(INFO.isp)}</text><text x="24" y="138" font-family="sans-serif" font-size="13" fill="#fff">启发式评分 ${esc2(INFO.score)} / 100 · ${style}</text><circle cx="${w-36}" cy="34" r="14" fill="${accent}" opacity="0.9"/></svg>`;
 }

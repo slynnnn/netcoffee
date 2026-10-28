@@ -72,3 +72,31 @@ async function checkCommonPorts(host){
   for(const x of ports){const ms=await timedFetch(x.url,4000);out.push({port:x.p,reachable:ms!==null,ms});}
   return out;
 }
+
+// ---- v2 helpers: multi-source geo, RDAP, fingerprint rendering, dropdown ----
+async function getMultiGeo(ip){
+  const out=[];
+  try{const j=await fetchJSON('https://ip-api.com/json/'+encodeURIComponent(ip)+'?fields=status,country,regionName,city,lat,lon,isp',{},6000);if(j.status==='success')out.push({source:'ip-api.com',country:j.country,region:j.regionName,city:j.city,lat:j.lat,lon:j.lon,isp:j.isp});}catch(e){}
+  try{const j=await fetchJSON('https://ipapi.co/'+encodeURIComponent(ip)+'/json/',{},6000);if(!j.error)out.push({source:'ipapi.co',country:j.country_name,region:j.region,city:j.city,lat:j.latitude,lon:j.longitude,isp:j.org});}catch(e){}
+  try{const tr=await fetchTrace();if(tr.ip)out.push({source:'Cloudflare trace',country:'',region:'',city:'',lat:'',lon:'',isp:'',colo:tr.colo,loc:tr.loc});}catch(e){}
+  return out;
+}
+async function fetchRDAP(ip){
+  try{const j=await fetchJSON('/api/whois?q='+encodeURIComponent(ip),{},12000);return j.raw||j;}catch(e){}
+  try{const j=await fetchJSON('https://rdap.org/ip/'+encodeURIComponent(ip),{},10000);return j;}catch(e){return null;}
+}
+function browserName(){
+  const ua=navigator.userAgent;
+  if(/Edg\//.test(ua))return 'Edge'; if(/OPR\//.test(ua))return 'Opera';
+  if(/Chrome\//.test(ua))return 'Chrome'; if(/Firefox\//.test(ua))return 'Firefox';
+  if(/Safari\//.test(ua))return 'Safari'; return '未知浏览器';
+}
+function fingerprintHTML(dev){
+  const conn=navigator.connection||{};
+  return `<div class="kv"><b>时区</b><span>${esc(dev.timezone)}</span><b>语言</b><span>${esc(dev.language)}</span><b>浏览器</b><span>${esc(browserName())}</span><b>操作系统 / 平台</b><span>${esc(dev.platform)}</span><b>触屏</b><span>${esc(dev.touch)}</span><b>网络类型</b><span>${esc(conn.effectiveType||'未知')}${conn.downlink?(' · 约 '+conn.downlink+' Mbps'):''}</span><b>Do Not Track</b><span>${esc(dev.dnt)}</span><b>WebGL 渲染器</b><span>${esc(dev.webgl)}</span><b>Canvas 指纹摘要</b><span>${esc(dev.canvas)}</span></div><p class="small">指纹只在本页即时计算、显示，不上传、不保存到服务器。</p>`;
+}
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('.dropbtn');
+  document.querySelectorAll('.dropdown').forEach(d=>{if(!btn||!d.contains(btn))d.classList.remove('open');});
+  if(btn){btn.closest('.dropdown').classList.toggle('open');}
+});

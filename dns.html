@@ -1,13 +1,13 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>DNS 泄露检测 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
 <header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
-<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><span class="dropdown"><button class="dropbtn" type="button">更多 ▾</button><span class="dropmenu"><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></span></span>
 </nav></div></header>
 <div class="wrap">
 <h1>DNS 泄露检测</h1>
 <p class="lead">DNS 泄露的意思是：流量走了代理，但 DNS 查询还走了本地运营商，于是对方能看到你查过哪些域名。真正“看到你系统 DNS 出口”的检测，需要自建权威 DNS + 唯一子域名记录查询来源，本页浏览器版做不到这一点，因此下面是诚实的两部分：</p>
 <div class="note"><b>浏览器版能做的：</b>测你到各公共 DoH 解析器的延迟与解析结果，并对比你的出口 IP 地区；<b>不能做的：</b>直接读出你系统 DNS 的出口 IP。要后者，请按 README 部署权威 DNS 探针，或用你信任的第三方泄露测试站交叉验证。</div>
-<div class="row"><button id="go">开始检测</button></div>
+<div class="row"><button id="go">快速测试</button><button class="secondary" id="deepBtn">深度测试</button></div><p class="steps" id="dnsProgress">未开始。快速测试做 4 步，深度测试多测 2 个解析器。</p>
 <div id="out"></div>
 <h2>简短自查指南（本站原创）</h2>
 <ul>
@@ -17,20 +17,29 @@
 <li>改完后回本页重测，并到 <a href="webrtc.html">WebRTC 页</a>再查一次 UDP 泄露。</li>
 </ul>
 <p class="small">DoH 与 DoT 的区别：普通 DNS 明文；DoT 用 853 端口 TLS 加密但特征明显；DoH 藏在 443 的 HTTPS 里最隐蔽。隐私最好的是 DoH，但前提是它走你信任的通道。</p>
-<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询；历史只存浏览器本地。</p></footer>
 </div><script src="assets/app.js"></script>
 <script>
-async function run(){
- const out=document.getElementById('out');out.innerHTML='<p class="small">检测中…</p>';
- let html='';
+async function run(deep){
+ const out=document.getElementById('out');const prog=document.getElementById('dnsProgress');
+ const step=n=>{prog.textContent='正在检测…（'+n+'/5）';};
+ out.innerHTML='<p class="small">检测中…</p>';let html='';
+ step(1);
  try{const info=await getIPInfo();html+=`<div class="card"><h3>你的出口</h3><p>${esc(info.ip||'—')} · ${esc([info.country,info.city].filter(Boolean).join(' '))} · ${esc(info.isp||'')}</p><p class="small">如果下面 DoH 解析器地区与你的出口地区明显不一致，只说明解析器本身在别处，不等于泄露；真正判断要看系统 DNS 出口，见顶部说明。</p></div>`;}catch(e){}
  const resolvers=[
   {name:'Cloudflare DoH (1.1.1.1)',url:'https://cloudflare-dns.com/dns-query?name=example.com&type=A',headers:{Accept:'application/dns-json'}},
   {name:'Google DoH (8.8.8.8)',url:'https://dns.google/resolve?name=example.com&type=A',headers:{}},
  ];
- for(const r of resolvers){const t0=performance.now();try{const resp=await fetch(r.url,{headers:r.headers});const j=await resp.json();const ms=Math.round(performance.now()-t0);const ans=(j.Answer||[]).map(a=>a.data).join(', ');html+=`<div class="card"><h3>${r.name}</h3><p>${latencyLabel(ms)} · 解析结果：${esc(ans||'—')}</p></div>`;}catch(e){html+=`<div class="card"><h3>${r.name}</h3><p><span class="badge bad">不可达/被拦截</span></p></div>`;}}
+ if(deep){resolvers.push(
+  {name:'Quad9 DoH (9.9.9.9)',url:'https://dns.quad9.net/dns-query?name=example.com&type=A',headers:{Accept:'application/dns-json'}},
+  {name:'AliDNS DoH (223.5.5.5)',url:'https://dns.alidns.com/resolve?name=example.com&type=A',headers:{}},
+ );}
+ let i=2;
+ for(const r of resolvers){step(Math.min(i,4));const t0=performance.now();try{const resp=await fetch(r.url,{headers:r.headers});const j=await resp.json();const ms=Math.round(performance.now()-t0);const ans=(j.Answer||[]).map(a=>a.data).join(', ');html+=`<div class="card"><h3>${r.name}</h3><p>${latencyLabel(ms)} · 解析结果：${esc(ans||'—')}</p></div>`;}catch(e){html+=`<div class="card"><h3>${r.name}</h3><p><span class="badge bad">不可达/被拦截</span></p></div>`;}i++;}
+ step(5);
  try{const tr=await fetchTrace();html+=`<div class="card"><h3>Cloudflare Trace（浏览器直连）</h3><p class="small">IP：${esc(tr.ip||'—')} · 节点：${esc(tr.colo||'—')} · 地区：${esc(tr.loc||'—')} · WARP：${esc(tr.warp||'—')}</p></div>`;}catch(e){}
- out.innerHTML=html;
+ html+=`<div class="card"><h3>结论（浏览器版）</h3><p class="small">以上只证明公共 DoH 可达与解析正常，不能证明你的系统 DNS 没有走本地运营商。改完代理 DNS 设置后请重测，并到 WebRTC 页再查 UDP。</p></div>`;
+ out.innerHTML=html;prog.textContent='检测完成（'+(deep?'深度 5 步':'快速 4 步')+'）。';
 }
-document.getElementById('go').onclick=run;run();
+document.getElementById('go').onclick=()=>run(false);document.getElementById('deepBtn').onclick=()=>run(true);run(false);
 </script></body></html>

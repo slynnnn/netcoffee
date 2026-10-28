@@ -2,7 +2,7 @@
 <title>IP 查询 · 分流出口测试 — IP 工具</title><meta name="description" content="查看当前 IP、归属地、运营商与分流出口，测各站延迟。免费，无登录，不记录查询。">
 <link rel="stylesheet" href="assets/style.css"></head><body>
 <header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
-<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><span class="dropdown"><button class="dropbtn" type="button">更多 ▾</button><span class="dropmenu"><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></span></span>
 </nav></div></header>
 <div class="wrap">
 <h1>我的 IP 查询</h1>
@@ -14,6 +14,24 @@
 <div class="card p-pink"><h3>IPv6</h3><p id="v6" data-ip>检测中…</p><p class="small">无 IPv6 时显示“未检测到”，不代表网络异常。</p></div>
 <div class="card p-green"><h3>归属地 / 运营商</h3><p id="geo">检测中…</p></div>
 <div class="card p-yellow"><h3>类型</h3><p id="type">检测中…</p><p class="small" id="src"></p></div>
+</div>
+
+<h2>全部工具</h2>
+<p class="small">13 个工具，从首页直达。每个卡片点进去就是对应工具页。</p>
+<div class="toolwall">
+<a class="toolcard tc1" href="index.html"><h3>IP查询</h3><p>当前 IP、归属、ISP 与分流出口延迟</p></a>
+<a class="toolcard tc2" href="claude.html"><h3>Claude 检测</h3><p>Claude 出口纯净度与 0–100 启发式分数</p></a>
+<a class="toolcard tc3" href="ip.html"><h3>IP评分</h3><p>深度评分、地理、ASN、风险与多源对比</p></a>
+<a class="toolcard tc4" href="gpt.html"><h3>GPT检测</h3><p>ChatGPT / Codex 出口与 API 链路</p></a>
+<a class="toolcard tc5" href="link.html"><h3>网络连通</h3><p>中国 / 日本 / 美国 / 全球分组延迟</p></a>
+<a class="toolcard tc6" href="dns.html"><h3>DNS泄露</h3><p>公共 DoH 实测 + 简短自查指南</p></a>
+<a class="toolcard tc7" href="webrtc.html"><h3>WebRTC</h3><p>多 STUN 节点 UDP 泄露与分流对比</p></a>
+<a class="toolcard tc8" href="cloudflare.html"><h3>Cloudflare</h3><p>边缘节点、WARP、等级延迟与测速</p></a>
+<a class="toolcard tc9" href="ping.html"><h3>全球Ping</h3><p>浏览器近似 + 20 节点表（未接入不造数）</p></a>
+<a class="toolcard tc10" href="status.html"><h3>服务状态</h3><p>31 个主流服务官方状态聚合，故障置顶</p></a>
+<a class="toolcard tc11" href="whois.html"><h3>Whois查询</h3><p>域名 / IP / AS 号 RDAP 优先查询</p></a>
+<a class="toolcard tc12" href="news.html"><h3>AI资讯</h3><p>OpenAI / Claude 等动态分类与分页</p></a>
+<a class="toolcard tc13" href="card/"><h3>IP卡片</h3><p>多样式卡片生成与嵌入代码</p></a>
 </div>
 <h2>延迟预览（6 站）</h2>
 <div id="preview"><p class="small">检测中…</p></div>

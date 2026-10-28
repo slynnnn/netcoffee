@@ -1,7 +1,7 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>IP 评分 · 地理 / ASN / 风险 — IP 工具</title><link rel="stylesheet" href="assets/style.css"></head><body>
 <header class="top"><div class="topin"><div class="logo">IP<span>工具</span></div><div class="tag">免费 · 无登录 · 不记录查询</div><button class="themebtn" id="themeBtn">🖥️ 跟随系统</button></div><div class="navwrap"><nav>
-<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a>
+<a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><span class="dropdown"><button class="dropbtn" type="button">更多 ▾</button><span class="dropmenu"><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></span></span>
 </nav></div></header>
 <div class="wrap">
 <h1>IP 深度评分</h1>
@@ -9,7 +9,7 @@
 <div class="row"><input id="ipInput" placeholder="输入 IPv4 / IPv6，留空 = 当前 IP"><button id="go">查询</button><label><input type="checkbox" id="hideIp"> 隐藏 IP</label></div>
 <div id="out"></div>
 <h2>历史（仅本机）</h2><div id="hist"></div><button class="secondary" id="clearHist">清除历史</button>
-<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="ip.html">IP评分</a><a href="cloudflare.html">Cloudflare</a><a href="whois.html">Whois查询</a></div><p>本站不登录、不收费、不在服务器记录查询。</p></footer>
+<footer><div class="footlinks"><a href="index.html">IP查询</a><a href="claude.html">Claude</a><a href="ip.html">IP评分</a><a href="gpt.html">GPT检测</a><a href="link.html">网络连通</a><a href="dns.html">DNS泄露</a><a href="webrtc.html">WebRTC</a><a href="cloudflare.html">Cloudflare</a><a href="ping.html">全球Ping</a><a href="status.html">服务状态</a><a href="whois.html">Whois查询</a><a href="news.html">AI资讯</a><a href="card/">IP卡片</a></div><p>本站不登录、不收费、不在服务器记录查询；历史只存浏览器本地。</p></footer>
 </div><script src="assets/app.js"></script>
 <script>
 async function run(){
@@ -31,9 +31,31 @@ async function run(){
     <div class="card"><h3>风险信号</h3><p>VPN：${info.proxy?'疑似':'未见信号'} · 代理：${info.proxy?'是':'未见信号'} · Tor：未接入商业源，无法判定 · 爬虫：未见信号（启发式）</p><p class="small">滥用 / DNSBL：未接入 AbuseIPDB 等商业源时不做“干净”结论。下面外链可人工核对（第三方站点，与本站无关）：</p>
     <p><a href="https://www.abuseipdb.com/check/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">AbuseIPDB ↗</a> · <a href="https://www.virustotal.com/gui/ip-address/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">VirusTotal ↗</a> · <a href="https://www.shodan.io/host/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">Shodan ↗</a> · <a href="https://bgp.tools/prefix/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">BGP.tools ↗</a></p></div>
     <div class="card"><h3>常见端口（浏览器近似）</h3><p class="small">浏览器不能做原始 TCP 端口扫描。下表只测 80/443 的网页可达性，其余端口显示“无法直接探测”，不要误读为关闭。</p><table><tr><th>端口</th><th>结果</th></tr>${ports.map(p=>`<tr><td>${p.port}</td><td>${p.reachable?'网页可达（'+p.ms+'ms）':'不可达/超时'}</td></tr>`).join('')}<tr><td>22 / 25 / 53 / 3389 等</td><td>浏览器无法直接探测</td></tr></table></div>
-    <div class="card"><h3>BGP 路径（说明）</h3><p class="small">真实 BGP 路径需 BGP 查看点 / RIPE RIS 等数据源，本页不伪造路径图。可用上方 BGP.tools 外链查看该 IP 的前缀与 ASN 关系。</p></div>`;
+    <div class="card"><h3>多源地理对比</h3><div id="multiGeo"><p class="small">加载中…</p></div><p class="small">同一 IP 在不同免费源结果不同属正常：城市级误差、数据库更新时间、IP 段归属变更都会造成差异；以 RDAP / ASN 归属为准，不要只看一家。</p></div>
+    <div class="card"><h3>ASN / RDAP 详情</h3><div id="rdapBox"><p class="small">加载中…</p></div></div>
+    <div class="card"><h3>BGP 前缀与路径（说明 + RDAP 实测）</h3><div id="bgpBox"><p class="small">真实完整 BGP 路径需 BGP 查看点 / RIPE RIS 等数据源，本页不伪造路径图。RDAP 若返回前缀范围，下方会如实显示；否则只给 BGP.tools 外链人工核对。</p></div></div>
+    <div class="card"><h3>反向 DNS</h3><p class="small">浏览器无法直接做 PTR 查询。反向域名需在服务器端或第三方工具查；若该 IP 有 PTR，通常形如 ISP / 云厂商的反向域名。可用上方 Whois 页的 RDAP 实体信息交叉核对。</p></div>
+    <div class="card"><h3>DNSBL / 滥用（诚实口径）</h3><p>未接入 AbuseIPDB 等付费源时：<span class="badge grey">未见信号 / 无法判定</span>，不写“干净”。需要结论时点下方外链人工核对（第三方站点，与本站无关）。</p><p><a href="https://www.abuseipdb.com/check/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">AbuseIPDB ↗</a> · <a href="https://www.virustotal.com/gui/ip-address/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">VirusTotal ↗</a> · <a href="https://www.shodan.io/host/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">Shodan ↗</a> · <a href="https://bgp.tools/prefix/${encodeURIComponent(info.ip)}" target="_blank" rel="noopener">BGP.tools ↗</a></p></div>`;
     document.querySelectorAll('[data-ip]').forEach(n=>{n.dataset.raw=info.ip;});
     setHide(document.getElementById('hideIp').checked);
+
+    // v2: multi-source geo + RDAP (best effort, failures degrade gracefully)
+    try{
+      const mg=await getMultiGeo(info.ip);
+      const places=mg.map(x=>`<tr><td>${esc(x.source)}</td><td>${esc([x.country,x.region,x.city].filter(Boolean).join(' ')||'—')}</td><td>${esc(x.lat&&x.lon?(x.lat+','+x.lon):'—')}</td><td>${esc(x.isp||x.colo||x.loc||'—')}</td></tr>`).join('');
+      const disagree=new Set(mg.map(x=>[x.country,x.city].filter(Boolean).join(' ')).filter(Boolean)).size>1;
+      document.getElementById('multiGeo').innerHTML=`<div class="tablewrap"><table><tr><th>来源</th><th>地区</th><th>经纬度</th><th>ISP / 节点</th></tr>${places||'<tr><td colspan="4">无数据</td></tr>'}</table></div>${disagree?'<p class="small">⚠️ 各源地区不一致：以 RDAP / ASN 归属为准。</p>':''}`;
+    }catch(e){document.getElementById('multiGeo').innerHTML='<p class="small">多源对比加载失败（免费接口限流），主结果不受影响。</p>';}
+    try{
+      const rd=await fetchRDAP(info.ip);
+      if(rd){
+        const ents=(rd.entities||[]).map(e=>e.handle||'').filter(Boolean).join('，');
+        document.getElementById('rdapBox').innerHTML=`<div class="kv"><b>对象</b><span>${esc(rd.handle||rd.startAddress||'—')}</span><b>类型</b><span>${esc(rd.objectClassName||'—')}</span><b>实体</b><span>${esc(ents||'—')}</span><b>名称</b><span>${esc(rd.name||'—')}</span><b>状态</b><span>${esc((rd.status||[]).join('，')||'—')}</span></div>`;
+        document.getElementById('bgpBox').innerHTML=`<div class="kv"><b>起始地址</b><span>${esc(rd.startAddress||'—')}</span><b>结束地址</b><span>${esc(rd.endAddress||'—')}</span><b>前缀（CIDR）</b><span>${esc(rd.cidr0_cidrs?rd.cidr0_cidrs.map(c=>c.v4prefix||c.v6prefix).filter(Boolean).join('，'):'RDAP 未返回')}</span></div><p class="small">完整上游路径仍需 BGP 查看点，本页不画假路径图；点上方 BGP.tools 可看该前缀的真实 ASN 关系。</p>`;
+      } else {
+        document.getElementById('rdapBox').innerHTML='<p class="small">RDAP 未返回（无端点或被拦截）。本地静态预览时 /api/whois 为 404，属预期降级；部署后会自动走 Function。</p>';
+      }
+    }catch(e){document.getElementById('rdapBox').innerHTML='<p class="small">RDAP 加载失败，不影响主评分。</p>';}
     saveHistory('ip',{ip:info.ip,label:sc.score+'分'});renderHistory('ip','hist');
   }catch(e){el.innerHTML='<p class="small">查询失败：免费接口可能限流，请稍后重试。</p>';}
 }
